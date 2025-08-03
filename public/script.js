@@ -1,14 +1,16 @@
-const API_URL = "http://localhost:3000/api/contacts";
+const API_URL = "/api/contacts"; // ✅ FIXED
 
 const contactList = document.getElementById("contactList");
 const form = document.getElementById("contactForm");
 
 let editId = null;
 
-
 window.onload = () => {
   fetchContacts();
 };
+
+// (rest of your code is perfect)
+
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
