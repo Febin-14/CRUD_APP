@@ -1,48 +1,55 @@
 const express = require("express");
 const router = express.Router();
-const db = require("../db");
+const pool = require("../db");
 
-
-// GET all contacts
-router.get("/", (req, res) => {
-  db.query("SELECT * FROM contacts", (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(results);
-  });
+// ✅ GET all contacts
+router.get("/", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM contacts");
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// POST new contact
-router.post("/", (req, res) => {
+// ✅ POST new contact
+router.post("/", async (req, res) => {
   const { name, email, phone } = req.body;
-  db.query(
-    "INSERT INTO contacts (name, email, phone) VALUES (?, ?, ?)",
-    [name, email, phone],
-    (err, result) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ message: "Contact added", id: result.insertId });
-    }
-  );
+  try {
+    const result = await pool.query(
+      "INSERT INTO contacts (name, email, phone) VALUES ($1, $2, $3) RETURNING id",
+      [name, email, phone]
+    );
+    res.json({ message: "Contact added", id: result.rows[0].id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-//  So to Edit contact
-router.put("/:id", (req, res) => {
+// ✅ PUT to update contact
+router.put("/:id", async (req, res) => {
   const { name, email, phone } = req.body;
-  db.query(
-    "UPDATE contacts SET name = ?, email = ?, phone = ? WHERE id = ?",
-    [name, email, phone, req.params.id],
-    (err) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ message: "Contact updated" });
-    }
-  );
+  const id = req.params.id;
+  try {
+    await pool.query(
+      "UPDATE contacts SET name = $1, email = $2, phone = $3 WHERE id = $4",
+      [name, email, phone, id]
+    );
+    res.json({ message: "Contact updated" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// So to delete
-router.delete("/:id", (req, res) => {
-  db.query("DELETE FROM contacts WHERE id = ?", [req.params.id], (err) => {
-    if (err) return res.status(500).json({ error: err.message });
+// ✅ DELETE a contact
+router.delete("/:id", async (req, res) => {
+  const id = req.params.id;
+  try {
+    await pool.query("DELETE FROM contacts WHERE id = $1", [id]);
     res.json({ message: "Contact deleted" });
-  });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;
